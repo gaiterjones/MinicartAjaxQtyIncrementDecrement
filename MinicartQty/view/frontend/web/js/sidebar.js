@@ -5,7 +5,6 @@ define([
     'Magento_Ui/js/modal/alert',
     'Magento_Ui/js/modal/confirm',
     'underscore',
-    'jquery/ui',
     'mage/decorate',
     'mage/collapsible',
     'mage/cookies'
@@ -28,7 +27,7 @@ define([
                     'item_btn_plus': btnplus,
                     'item_btn_minus': btnminus
                 }, elem, this._updateItemQtyAfter);
-                this._customerData();
+
             },
 
             /**
@@ -46,6 +45,7 @@ define([
                         window.location.reload(false);
                     }
                 }
+                this._customerData();
                 this._hideItemButton(elem);
             },
 

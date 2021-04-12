@@ -33,14 +33,17 @@ class UpdateItemQty extends \Magento\Checkout\Controller\Sidebar\UpdateItemQty
      * @param Data $jsonHelper
      * @codeCoverageIgnore
      */
-    public function __construct(
-        Context $context,
-        Sidebar $sidebar,
-        Data $jsonHelper,
-        LoggerInterface $logger
-    ) {
-        parent::__construct($context, $sidebar, $logger, $jsonHelper);
-    }
+     public function __construct(
+         Context $context,
+         Sidebar $sidebar,
+         LoggerInterface $logger,
+         Data $jsonHelper
+     ) {
+         $this->sidebar = $sidebar;
+         $this->logger = $logger;
+         $this->jsonHelper = $jsonHelper;
+         parent::__construct($context, $sidebar, $logger, $jsonHelper);
+     }
 
     /**
      * @return $this

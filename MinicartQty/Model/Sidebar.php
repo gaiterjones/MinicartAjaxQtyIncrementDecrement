@@ -10,12 +10,25 @@ use Magento\Quote\Model\Quote\Address\Total;
 
 class Sidebar extends \Magento\Checkout\Model\Sidebar
 {
-    protected $resolver;
-
     /**
      * @var Cart
      */
     protected $cart;
+
+    /**
+     * @var HelperData
+     */
+    protected $helperData;
+
+    /**
+     * @var ResolverInterface
+     */
+    protected $resolver;
+
+    /**
+     * @var int
+     */
+    protected $summaryQty;
 
     /**
      * @param Cart $cart
@@ -25,10 +38,62 @@ class Sidebar extends \Magento\Checkout\Model\Sidebar
      */
     public function __construct(
         Cart $cart,
+        HelperData $helperData,
         ResolverInterface $resolver
     ) {
         $this->cart = $cart;
+        $this->helperData = $helperData;
         $this->resolver = $resolver;
+    }
+
+    /**
+     * Compile response data
+     *
+     * @param string $error
+     * @return array
+     */
+    public function getResponseData($error = '')
+    {
+        if (empty($error)) {
+            $response = [
+                'success' => true,
+            ];
+        } else {
+            $response = [
+                'success' => false,
+                'error_message' => $error,
+            ];
+        }
+        return $response;
+    }
+
+    /**
+     * Check if required quote item exist
+     *
+     * @param int $itemId
+     * @throws LocalizedException
+     * @return $this
+     */
+    public function checkQuoteItem($itemId)
+    {
+        $item = $this->cart->getQuote()->getItemById($itemId);
+        if (!$item instanceof CartItemInterface) {
+            throw new LocalizedException(__("The quote item isn't found. Verify the item and try again."));
+        }
+        return $this;
+    }
+
+    /**
+     * Remove quote item
+     *
+     * @param int $itemId
+     * @return $this
+     */
+    public function removeQuoteItem($itemId)
+    {
+        $this->cart->removeItem($itemId);
+        $this->cart->save();
+        return $this;
     }
 
     /**
@@ -39,32 +104,66 @@ class Sidebar extends \Magento\Checkout\Model\Sidebar
      * @throws LocalizedException
      * @return $this
      */
-    public function updateQuoteItem($itemId, $itemQty)
+     public function updateQuoteItem($itemId, $itemQty)
     {
-        $qtyPlusMinus = explode(",", $itemQty);
+     $qtyPlusMinus = explode(",", $itemQty);
 
-        $itemData = [$itemId => ['qty' => $this->normalize($qtyPlusMinus[0]), 'qtyplusminus' => $qtyPlusMinus[1]]];
-        $this->cart->updateItems($itemData)->save();
-        return $this;
+     $itemData = [$itemId => ['qty' => $this->normalize($qtyPlusMinus[0]), 'qtyplusminus' => $qtyPlusMinus[1]]];
+     $this->cart->updateItems($itemData)->save();
+     return $this;
     }
 
+    /**
+     * Apply normalization filter to item qty value
+     *
+     * @param int $itemQty
+     * @return int|array
+     */
     protected function normalize($itemQty)
     {
         if ($itemQty) {
             $filter = new \Zend_Filter_LocalizedToNormalized(
                 ['locale' => $this->resolver->getLocale()]
             );
-            return $filter->filter($itemQty);
+            return $filter->filter((string)$itemQty);
         }
         return $itemQty;
     }
 
-    public function checkQuoteItem($itemId)
+    /**
+     * Retrieve summary qty
+     *
+     * @return int
+     */
+    protected function getSummaryQty()
     {
-        $item = $this->cart->getQuote()->getItemById($itemId);
-        if (!$item instanceof CartItemInterface) {
-            throw new LocalizedException(__("The quote item isn't found. Verify the item and try again."));
+        if (!$this->summaryQty) {
+            $this->summaryQty = $this->cart->getSummaryQty();
         }
-        return $this;
+        return $this->summaryQty;
+    }
+
+    /**
+     * Retrieve summary qty text
+     *
+     * @return string
+     */
+    protected function getSummaryText()
+    {
+        return ($this->getSummaryQty() == 1) ? __(' item') : __(' items');
+    }
+
+    /**
+     * Retrieve subtotal block html
+     *
+     * @return string
+     */
+    protected function getSubtotalHtml()
+    {
+        $totals = $this->cart->getQuote()->getTotals();
+        $subtotal = isset($totals['subtotal']) && $totals['subtotal'] instanceof Total
+            ? $totals['subtotal']->getValue()
+            : 0;
+        return $this->helperData->formatPrice($subtotal);
     }
 }
