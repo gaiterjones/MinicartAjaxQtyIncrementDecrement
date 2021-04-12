@@ -42,11 +42,14 @@ class Cart extends \Magento\Checkout\Model\Cart
             $qty = isset($itemInfo['qty']) ? (double)$itemInfo['qty'] : false;
             if ($qty > 0) {
 
-                if($itemInfo['qtyplusminus'] == 'plus'){
-                    $qty = $qty + 1;
-                }
-                if($itemInfo['qtyplusminus'] == 'minus'){
-                    $qty = $qty - 1;
+                if(isset($itemInfo['qtyplusminus']))
+                {
+                    if($itemInfo['qtyplusminus'] == 'plus'){
+                        $qty = $qty + 1;
+                    }
+                    if($itemInfo['qtyplusminus'] == 'minus'){
+                        $qty = $qty - 1;
+                    }
                 }
 
                 $item->setQty($qty);
